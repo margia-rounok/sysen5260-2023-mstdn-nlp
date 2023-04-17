@@ -7,7 +7,9 @@ In this project your team will build a data-pipeline to perform the following st
 
 ![components](mstdn-nlp.drawio.png)
 
-In this project you will get everything running in a local environment: As docker containers running on your local machine.  However the next project will entail adopting your system to AWS so we will try to build it with an ultimate cloud-deployment in mind.
+In this project you will get everything running in a as docker containers on your local machine.  
+
+* **Note:** Time and budget permitting, we'll deploy these components to AWS to see it run at scale. We'll want to keep this in mind as we develop to make sure our systems will port to the cloud without too much difficulty.
 
 
 # What You Will Hand In
@@ -16,20 +18,22 @@ You will fork this repository and implement each of the components of this syste
 You will also hand in a short written section, described below.
 
 # Building the system
+This section provides some more detail on the 3 main components that you will build and integrate.
 
 ## Toot Extractor
 You will create a new docker-compose service called `extractor`. This will run a program that fetches the timeline from one or more Mastodon servers and adds it to our "data-lake." For now the data-lake will be implemented as a shared docker-volume called `datalake`. 
 
 ### Component Requirements
 
-* This service should fetch the public-timeline object from one of the mastodon servers -- e.g. <https://mastodon.social/api/v1/timelines/public>.
+* This service should fetch the public-timeline object from one of the mastodon servers -- e.g. <https://mastodon.social/api/v1/timelines/public>, <https://fosstodon.org/api/v1/timelines/public>, etc.
 * This service should perform a fetch every 30 seconds and add the new records to the data-lake.
-* You should store these files in some way that makes it easy to load in aggregate by Spark (e.g. JSON files in a sub-directory with timstamp in the name)
+* You should store these files in some way that makes it easy to load in aggregate by Spark (e.g. JSON files in a sub-directory with timstamp in the name. 
 
 ### Additional Hints
 
 * The program your container runs should not exit or else the container shuts down. You need to make your initial command retrieve results, then wait in an infinite loop.
 *  I recommend you write your program in a language that is supported by AWS Lambda because thisi is how we will deploy this component to the cloud.
+* Organize your data to be easily consumed by Spark. For example, take advantage of the fact that spark-functions like  `spark.read.json()` accept wildcards in their paths to load all files and concatenate into a single dataframe.
 
 
 ## TF-IDF Matrix Calculator
@@ -43,14 +47,15 @@ You will write a pyspark application that reads the contents of your data-lake, 
 
 ### Additional Hints
 
-* Consider aggregating all text for each user, then performing the term-count.
+* Consider what's easier: aggregating all text for each user before performing the term-count, or \
+performing the term-count on each toot, then aggregating by user afterwards. 
 * Also, consider filtering your text to remove terms that are not useful for the task of categorizing. Here are some ideas to try:
     * turn all input into lower-case.
     * Remove obvious non-words -- i.e. numbers, errant punctuation, etc.
     * Remove extremely rare words -- i.e. those that appears in only one document.
 * Like your extractor, this program should run in an infinite loop.
 * In order to run Spark you should base this container off of the spark image. You can look at `jupyter` or `rest` for an example to follow.
-* 
+* You may need to store other metadata, e.g. to map rows to user-ids. All data you store should end up in the `warehouse` volume.  
 
 
 
@@ -87,11 +92,10 @@ In addition to the working docker-compose stack, please also hand in a written r
 ## How does your solution use Map-Reduce?
 PySpark abstracts away many of the details of the map-reduce architecture to provide either a SQL-like or a DataFrame-like interface to the data-scientist.
 
-Based on your specific implementation, please try to identify what steps are being performed by mappers, reducers, combiners, etc.
+Based on your implementation, please try to identify what specific steps performed by mappers, reducers, combiners, etc.
 
 ## Spark Data Sharing
-You'll notice that if you try to perform Spark operations on files that are not in '/opt/datalake' or '/opt/warehouse', the operations typically fail.  For example if you were to try to perform analysis on a file '/tmp/as-you-like-it.txt' Spark complains that the file is not found.  Why is that so?
-
+You'll notice that if you try to perform Spark operations on files that are not in `/opt/datalake` or `/opt/warehouse`, the operations typically fail.  For example if you were to try to perform analysis on a file `/tmp/as-you-like-it.txt` Spark complains that the file is not found.  Why is that so?
 
 ## Scaling up
 In your local environment, you can increase the number of worker containers by running:
@@ -103,6 +107,9 @@ docker-compose scale spark-worker=6
 Try running a task with one worker active.  Then try again with 6 workers active.
 
 What is the impact of the extra workers on the task's completion time?  Can you explain why?
+
+## Online Processing
+You'll notice that, although the spark session does allow us to get responses somewhat quickly, these tools seem better suited to batch processes.  Can you identify some other open-source systems that may help improve our REST response times?  How would you change the architecture to incorporate these systems?
 
 
 # Grading
