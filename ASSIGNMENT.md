@@ -9,6 +9,7 @@ In this project your team will build a data-pipeline to perform the following st
 
 In this project you will get everything running in a local environment: As docker containers running on your local machine.  However the next project will entail adopting your system to AWS so we will try to build it with an ultimate cloud-deployment in mind.
 
+
 # What You Will Hand In
 You will fork this repository and implement each of the components of this system as a separate docker-compose service. I should be able to run `docker-compose up` to bring up your entire system and see the Mastodon extractors start running, use the REST API to calculate a TF-IDF matrix, and POST a set of keywords and get a list of recommended Mastodon users.
 
@@ -25,20 +26,32 @@ You will create a new docker-compose service called `extractor`. This will run a
 * This service should perform a fetch every 30 seconds and add the new records to the data-lake.
 * You should store these files in some way that makes it easy to load in aggregate by Spark (e.g. JSON files in a sub-directory with timstamp in the name)
 
-A couple additional reminders:
+### Additional Hints
+
 * The program your container runs should not exit or else the container shuts down. You need to make your initial command retrieve results, then wait in an infinite loop.
 *  I recommend you write your program in a language that is supported by AWS Lambda because thisi is how we will deploy this component to the cloud.
 
 
 ## TF-IDF Matrix Calculator
-You will write a pyspark application that reads the contents of your data-lake, and computes the TF-IDF matrix and store it in our `warehouse` volume -- e.g. as a parquet file.
+You will write a pyspark application that reads the contents of your data-lake, and computes the TF-IDF matrix and store it in our `warehouse` volume -- e.g. as a parquet file.  See the Backgrounder below for more information on TF-IDF.
+
 
 ### Component Requirements
+
+* This program should generate a matrix where each row represents the a Mastodon-user and each column represents a word from our vocabulary.
 * You will implement a docker-service that uses pyspark to recompute the TF-IDF every 5 minutes.
 
-Additional reminders:
+### Additional Hints
+
+* Consider aggregating all text for each user, then performing the term-count.
+* Also, consider filtering your text to remove terms that are not useful for the task of categorizing. Here are some ideas to try:
+    * turn all input into lower-case.
+    * Remove obvious non-words -- i.e. numbers, errant punctuation, etc.
+    * Remove extremely rare words -- i.e. those that appears in only one document.
 * Like your extractor, this program should run in an infinite loop.
 * In order to run Spark you should base this container off of the spark image. You can look at `jupyter` or `rest` for an example to follow.
+* 
+
 
 
 ## REST API
@@ -63,7 +76,10 @@ The RESTful resources you will implement include:
 * `/api/v1/tf-idf/user-ids/<user_id>` -- This should return the TF-IDF matrix row for the given mastodon user as a dictionary with keys = vocabulary words, and values = TF-IDF values.
 * `/api/v1/tf-idf/user-ids/<user_id>/neighbors` -- This should return the 10 nearest neighbors, as measured by the cosine-distance between the users's TF-IDF matrix rows.
 
-You are provided with a `rest` service as a starting-point that demonstrates how to make Spark calls from a FastAPI service.
+### Additional Hints
+
+* You are provided with a `rest` service as a starting-point that demonstrates how to make Spark calls from a FastAPI service. Feel free to use this as a starting-point. If you have a different REST framework that you prefer, feel free to use that instead.
+
 
 # Written Section
 In addition to the working docker-compose stack, please also hand in a written report addressing the following points.
@@ -89,8 +105,9 @@ Try running a task with one worker active.  Then try again with 6 workers active
 What is the impact of the extra workers on the task's completion time?  Can you explain why?
 
 
+# Grading
 
-# How You'll Get an A
+## How You'll Get an A
 Here are some guidelines on how I'll grade this:
 
 * I can clone your repo, run `docker-compose up` and see:
@@ -108,6 +125,7 @@ Here are some guidelines on how I'll grade this:
 * You cite any references you used to come up with your solution.  You don't have to invent everything yourself, but the solutions you take from books, blogs, StackOverflow, ChatGPT, etc. all need to be cited.
 
 ## How You'll Earn Extra Credit
+* Add Swagger docs to your REST service. (See [here](https://fastapi.tiangolo.com/advanced/extending-openapi/).)
 * Make your REST service always respond within 1 second. Some ideas:
     * Maybe a connection-pool pattern for the SparkSession object would eliminate needless start-up time. 
     * If the task is still slow consider redesigning the API to use a Resource-Collection pattern -- e.g. The client posts calculation-requests to the `neighbor-calcs/`, then polls on completion.  The work still takes a long time but no endpoint holds a socket for more than a second.
