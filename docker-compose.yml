@@ -34,7 +34,7 @@ services:
       - PYTHONPATH=/opt/spark/python:/opt/spark/python/lib/py4j-0.10.9.7-src.zip:/opt/app/
     volumes:
       - warehouse:/opt/warehouse
-      - ./rest:/opt/app   ## uncomment for rapid development.
+      # - ./rest:/opt/app   ## uncomment for rapid development.
     ports:
       - '8000:8000'
   jupyter:
