@@ -59,7 +59,7 @@ services:
       context: ./extractor
     volumes:
       - datalake:/opt/data
-    command: python /extract.py
+    command: /bin/bash
     #restart: always
 
   

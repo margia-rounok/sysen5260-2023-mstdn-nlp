@@ -11,7 +11,7 @@ if response.status_code == 200:
 
     # Write the timeline to a new file in the data directory with a timestamp in the name
     timestamp = str(int(time.time()))
-    with open(f"data/{timestamp}.json", "w") as f:
+    with open(f"{timestamp}.json", "w") as f:
         json.dump(timeline, f)
 
 # Wait for 30 seconds before fetching the timeline again
