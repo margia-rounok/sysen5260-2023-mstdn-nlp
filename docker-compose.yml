@@ -51,6 +51,17 @@ services:
     ports:
       - '8888:8888'
     command: jupyter lab --allow-root --NotebookApp.token=secret123 --ip 0.0.0.0 --no-browser
+
+  extractor:
+    user: root
+    working_dir: /opt/app/data 
+    build: 
+      context: ./extractor
+    volumes:
+      - datalake:/opt/data
+    command: python /extract.py
+    #restart: always
+
   
 volumes:
   datalake:
