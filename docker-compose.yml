@@ -54,12 +54,12 @@ services:
 
   extractor:
     user: root
-    working_dir: /opt/app/data 
+    working_dir: /opt/data 
     build: 
       context: ./extractor
     volumes:
       - datalake:/opt/data
-    command: /bin/bash
+    command: python3 extract.py
     #restart: always
 
   
