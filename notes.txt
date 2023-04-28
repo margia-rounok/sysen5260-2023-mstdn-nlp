@@ -1,0 +1,2 @@
+docker commit 'sha256'
+docker run -it 'sha256' bash

@@ -1,4 +1,4 @@
-FROM apache/spark-py:v3.4.0
+FROM python:3.8-slim-buster
 USER root
 RUN pip install requests
 WORKDIR /opt/data
