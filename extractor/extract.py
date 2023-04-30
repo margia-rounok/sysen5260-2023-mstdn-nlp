@@ -2,6 +2,7 @@ import requests
 import json
 import time
 
+print(" Starting Extractor")
 while True:
     #Fetch the public timeline from Mastodon
     response = requests.get("https://mastodon.social/api/v1/timelines/public")
@@ -11,8 +12,10 @@ while True:
 
         # Write the timeline to a new file in the data directory with a timestamp in the name
         timestamp = str(int(time.time()))
-        with open(f"/opt/data/{timestamp}.json", "w") as f:
+        filename = f"/opt/data/{timestamp}.json"
+        with open(filename, "w") as f:
             json.dump(timeline, f)
+        print(f"Wrote {filename}.")
 
     # Wait for 30 seconds before fetching the timeline again
-    time.sleep(300000)
+    time.sleep(3000)

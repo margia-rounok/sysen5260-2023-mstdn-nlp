@@ -54,16 +54,12 @@ services:
 
   extractor:
     user: root
-    working_dir: /opt/data 
     build: 
       context: ./extractor
     environment:
-      - PYTHONPATH=/opt/spark/python:/opt/spark/python/lib/py4j-0.10.9.7-src.zip
+      PYTHONUNBUFFERED: 1   # Make python flush its print-buffer so we can see progress msgs    volumes:
     volumes:
       - datalake:/opt/data
-    command: python3 extract.py
-    #restart: always
-
   
 volumes:
   datalake:
