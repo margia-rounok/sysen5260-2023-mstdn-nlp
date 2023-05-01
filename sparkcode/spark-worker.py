@@ -1,30 +1,49 @@
-from pyspark.ml.feature import CountVectorizer, IDF, StopWordsRemover
-from pyspark.sql.functions import lower, regexp_replace, split
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import log10, explode
+import sys
+import numpy
+!pip install numpy
+!pip install pandas
 
-# Create a SparkSession
+# Initialize SparkSession
 spark = SparkSession.builder.appName("TF-IDF").getOrCreate()
 
-# Read the CSV file from your data-lake
-df = spark.read.json("path/to/csv/file.csv", header=True)
+# Load data from JSON file
+data = spark.read.json("../../../opt/data/*.json")
 
-# Preprocess the text data
-df = df.withColumn("toot_text", lower(regexp_replace("toot_text", "[^a-zA-Z\\s]", ""))) \
-       .withColumn("toot_text", split("toot_text", "\\s+")) \
-       .withColumn("toot_text", StopWordsRemover().setInputCol("toot_text").setOutputCol("toot_text_filtered").transform(df).drop("toot_text")) \
+from pyspark.sql.functions import log10, concat_ws, flatten,collect_list
 
-# Perform a term frequency count on the preprocessed text data for each user
-cv = CountVectorizer(inputCol="toot_text_filtered", outputCol="tf", vocabSize=10000, minDF=2.0)
-cvModel = cv.fit(df)
-df_tf = cvModel.transform(df).select("user_id", "tf")
+# Use concat_ws() to combine the array of strings into a single column
+data = data.withColumn("content", concat_ws(" ", "content"))
 
-# Compute the inverse document frequency (IDF) for each term in the vocabulary
-idf = IDF(inputCol="tf", outputCol="tf_idf")
-idfModel = idf.fit(df_tf)
-df_tfidf = idfModel.transform(df_tf).select("user_id", "tf_idf")
+# Use groupBy() and concat_ws() to combine the strings for rows with the same ID
+data = data.groupBy("id").agg(concat_ws(" ", collect_list("content")).alias("combined_content"))
 
-# Store the TF-IDF matrix in your warehouse volume as a Parquet file
-df_tfidf.write.parquet("path/to/parquet/file.parquet")
 
-# Stop the SparkSession
-spark.stop()
+### Imports for TF-IDF 
+from pyspark.sql import SparkSession
+from pyspark.ml.feature import HashingTF, IDF, Tokenizer
+from pyspark.ml.linalg import SparseVector, VectorUDT, DenseVector
+from pyspark.sql.functions import concat_ws, collect_list, udf
+
+# Tokenize content column
+tokenizer = Tokenizer(inputCol="combined_content", outputCol="words")
+data = tokenizer.transform(data)
+
+# Compute Term Frequencies
+hashingTF = HashingTF(inputCol="words", outputCol="rawFeatures")
+data = hashingTF.transform(data)
+
+# Compute Inverse Document Frequencies
+idf = IDF(inputCol="rawFeatures", outputCol="features")
+idfModel = idf.fit(data)
+data = idfModel.transform(data)
+
+# Convert sparse vectors to dense vectors
+to_dense = lambda v: DenseVector(v.toArray()) if isinstance(v, SparseVector) else v
+to_dense_udf = udf(to_dense, VectorUDT())
+data = data.withColumn("features", to_dense_udf("features"))
+
+# Write to file
+data.write.parquet("/opt/warehouse/tf_idf3.parquet")
+
