@@ -48,6 +48,9 @@ def main():
     # Write to file
     data.write.parquet("/opt/warehouse/tf_idf3.parquet")
 
+import time
 
 if __name__ == '__main__':
-    main()
+    while True:
+        main()
+        time.sleep(300)
