@@ -5,6 +5,6 @@ WORKDIR /opt/app
 COPY server.sh .
 RUN chmod a+rx server.sh
 ADD mnapi/ mnapi/
-ENTRYPOINT [ "/bin/sh", "-c"]
-CMD ["./server.sh"]
+ENTRYPOINT ["uvicorn", "mnapi.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
 
