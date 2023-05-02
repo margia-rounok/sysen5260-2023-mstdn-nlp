@@ -18,4 +18,4 @@ while True:
         print(f"Wrote {filename}.")
 
     # Wait for 30 seconds before fetching the timeline again
-    time.sleep(3000)
+    time.sleep(30000)
