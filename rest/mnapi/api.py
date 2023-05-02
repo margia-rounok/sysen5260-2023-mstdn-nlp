@@ -19,6 +19,10 @@ cosine_sim_matrix = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
 # Define the API endpoints
 
+@app.get("/")
+def read_root():
+    return {"Hello": "World"}
+
 # Lists all of the known Mastodon accounts in the data-set.
 @app.get('/mstdn-nlp/api/v1/accounts/')
 def get_accounts() -> List[Dict[str, str]]:
