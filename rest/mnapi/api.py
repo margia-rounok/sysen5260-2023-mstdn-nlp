@@ -7,8 +7,11 @@ import pandas as pd
 app = FastAPI()
 
 # Load the Parquet file containing the TF-IDF values
-tfidf_df = pd.read_parquet('tfidf.parquet')
-
+try:
+    tfidf_df = pd.read_parquet('tfidf.parquet')
+except:
+    print('There was an error reading the parquet')
+    tf_idf_df = None
 # Initialize the TF-IDF vectorizer and fit it to the corpus of text data
 vectorizer = TfidfVectorizer()
 corpus = tfidf_df['text'].tolist()
@@ -21,6 +24,12 @@ cosine_sim_matrix = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
 @app.get("/")
 def read_root():
+    # Load the Parquet file containing the TF-IDF values
+    try:
+        tfidf_df = pd.read_parquet('opt/warehouse/tfidf.parquet')
+    except:
+        print('There was an error reading the parquet')
+        tf_idf_df = None
     return {"Hello": "World"}
 
 # Lists all of the known Mastodon accounts in the data-set.

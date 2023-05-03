@@ -1,13 +1,41 @@
 from typing import Union
-
+from typing import List, Dict
 from fastapi import FastAPI
-
+import pandas as pd
 app = FastAPI()
+# Load the Parquet file containing the TF-IDF values
+# try:
+#     tfidf_df = pd.read_parquet('tfidf.parquet')
+# except:
+#     print('There was an error reading the parquet')
+#     tf_idf_df = None
+import os
 
-
+tf_idf_df = None
 @app.get("/")
 def read_root():
+    print("in read_root")
+
+    try:
+        print("This is a try")
+        print(os.listdir('..'))
+        tfidf_df = pd.read_parquet('/../warehouse/tf_idf3.parquet')
+        print("The tdidf populated successfully")
+    except:
+        print('There was an error reading the parquet')
+        
+        tf_idf_df = None
     return {"Hello": "World"}
+
+
+# Lists all of the known Mastodon accounts in the data-set.
+@app.get('/mstdn-nlp/api/v1/accounts/')
+def get_accounts() -> List[Dict[str, str]]:
+    users_list = tfidf_df[['username', 'id']].to_dict('records')
+    return users_list
+
+
+
 
 
 @app.get("/items/{item_id}")

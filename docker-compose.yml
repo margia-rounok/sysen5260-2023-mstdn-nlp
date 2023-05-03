@@ -17,9 +17,11 @@ services:
   spark-worker:
     user: root
     working_dir: /opt/spark
-    image: apache/spark-py:v3.4.0
+    # image: apache/spark-py:v3.4.0
     environment:
       - SPARK_NO_DAEMONIZE=true
+    build:
+      context: ./sparkcode
     volumes:
       - datalake:/opt/data
       - warehouse:/opt/warehouse
