@@ -2,6 +2,9 @@ from typing import Union
 from typing import List, Dict
 from fastapi import FastAPI
 import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from typing import List, Dict
 app = FastAPI()
 # Load the Parquet file containing the TF-IDF values
 # try:
@@ -10,22 +13,37 @@ app = FastAPI()
 #     print('There was an error reading the parquet')
 #     tf_idf_df = None
 import os
+# Initialize the TF-IDF vectorizer and fit it to the corpus of text data
+tfidf_df = pd.read_parquet('/opt/warehouse/tf_idf3.parquet') 
+vectorizer = TfidfVectorizer()
+corpus = tfidf_df['words']
+tfidf_matrix = vectorizer.fit_transform(corpus)
+
+# Compute the cosine similarity matrix for all users
+cosine_sim_matrix = cosine_similarity(tfidf_matrix, tfidf_matrix)
+
 
 tf_idf_df = None
 @app.get("/")
 def read_root():
-    print("in read_root")
-
+    print("in read_root")  
+    tfidf_df = pd.read_parquet('/opt/warehouse/tf_idf3.parquet') 
+    print(cosine_sim_matrix)
     try:
         print("This is a try")
         print(os.listdir('..'))
-        tfidf_df = pd.read_parquet('/../warehouse/tf_idf3.parquet')
+        print(os.listdir('/opt/warehouse/'))
+        print(os.listdir('../warehouse/'))
+        tfidf_df = pd.read_parquet('/opt/warehouse/tf_idf3.parquet')
         print("The tdidf populated successfully")
+
+        message = 'The import worked'
+
     except:
         print('There was an error reading the parquet')
-        
+        message = 'The import failed'
         tf_idf_df = None
-    return {"Hello": "World"}
+    return {"Import status": message}
 
 
 # Lists all of the known Mastodon accounts in the data-set.

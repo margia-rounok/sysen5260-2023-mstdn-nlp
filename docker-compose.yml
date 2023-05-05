@@ -17,20 +17,27 @@ services:
   spark-worker:
     user: root
     working_dir: /opt/spark
-    # image: apache/spark-py:v3.4.0
+    image: apache/spark-py:v3.4.0
     ports:
       - '8081:8081'
     environment:
       - SPARK_NO_DAEMONIZE=true
       - "SPARK_MASTER=spark://spark-master:7077"
-    build:
-      context: ./sparkcode
     volumes:
       - datalake:/opt/data
       - warehouse:/opt/warehouse
-    # ports:
-    #   - '9000-9010:8081'
     command: ./sbin/start-worker.sh spark://spark-master:7077 
+  spark-driver:
+    build:
+      context: ./spark_code_new
+    user: root
+    working_dir: /opt/app
+    # environment:
+    #   - PYTHONPATH=/opt/spark/python:/opt/spark/python/lib/py4j-0.10.9.7-src.zip
+    volumes:
+      - datalake:/opt/data
+      - warehouse:/opt/warehouse
+
   rest:
     user: root
     build:

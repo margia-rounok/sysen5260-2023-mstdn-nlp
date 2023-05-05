@@ -26,7 +26,7 @@ cosine_sim_matrix = cosine_similarity(tfidf_matrix, tfidf_matrix)
 def read_root():
     # Load the Parquet file containing the TF-IDF values
     try:
-        tfidf_df = pd.read_parquet('opt/warehouse/tfidf.parquet')
+        tfidf_df = pd.read_parquet('opt/warehouse/tf_idf3.parquet')
     except:
         print('There was an error reading the parquet')
         tf_idf_df = None

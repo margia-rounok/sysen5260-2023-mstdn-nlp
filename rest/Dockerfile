@@ -1,6 +1,6 @@
 FROM apache/spark-py:v3.4.0
 USER root
-RUN pip install fastapi uvicorn[standard] scikit-learn pandas numpy
+RUN pip install fastapi uvicorn[standard] scikit-learn pandas numpy pyarrow fastparquet
 WORKDIR /opt/app
 COPY server.sh .
 RUN chmod a+rx server.sh
