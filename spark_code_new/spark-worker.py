@@ -53,10 +53,13 @@ while True:
     # Convert sparse vectors to dense vectors
     to_dense = lambda v: DenseVector(v.toArray()) if isinstance(v, SparseVector) else v
     to_dense_udf = udf(to_dense, VectorUDT())
+    data = data.drop("rawFeatures")
+    data = data.drop("combined_content")
     data = data.withColumn("features", to_dense_udf("features"))
-
+    data.printSchema()
     # Write to file
     data.write.mode("overwrite").parquet(path="/opt/warehouse/tf_idf3.parquet",mode="overwrite")
+    spark.stop()
     time.sleep(300)
 # return
 
