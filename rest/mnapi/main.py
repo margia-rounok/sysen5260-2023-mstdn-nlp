@@ -10,6 +10,16 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType, ArrayType
 from pyspark.ml.linalg import VectorUDT
 
+"""
+TODO:
+Endpoints
+1. /accounts/ list of known mastodon users and ID numbers
+2. /tf-idf/user-ids/<user-id> --returns vocabulary words, and values
+3. /tf-idf/user-ids/<user-id>/neighbors
+    -returns 10 closest users by cosine distance of vectorized TF-IDF.
+"""
+
+
 app = FastAPI()
 # Load the Parquet file containing the TF-IDF values
 # try:

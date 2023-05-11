@@ -28,12 +28,12 @@ services:
       - warehouse:/opt/warehouse
     command: ./sbin/start-worker.sh spark://spark-master:7077 
   spark-driver:
-    build:
-      context: ./spark_code_new
     user: root
     working_dir: /opt/app
-    # environment:
-    #   - PYTHONPATH=/opt/spark/python:/opt/spark/python/lib/py4j-0.10.9.7-src.zip
+    build:
+      context: ./spark_code_new
+    environment:
+      - PYTHONPATH=/opt/spark/python:/opt/spark/python/lib/py4j-0.10.9.7-src.zip:/opt/app/
     volumes:
       - datalake:/opt/data
       - warehouse:/opt/warehouse
@@ -55,7 +55,7 @@ services:
     build: 
       context: ./jupyter
     volumes:
-      - ./sparkcode:/opt/spark/sparkcode
+      - ./spark_code_new:/opt/spark/sparkcode
       - datalake:/opt/data
       - warehouse:/opt/warehouse
     environment:
