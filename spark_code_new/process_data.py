@@ -11,13 +11,12 @@ from pyspark.ml.feature import HashingTF, IDF, Tokenizer
 from pyspark.ml.linalg import SparseVector, VectorUDT, DenseVector
 from pyspark.sql.functions import concat_ws, collect_list, udf
 
-# ../bin/spark-submit  --master spark://spark-master:7077 countab.py
+
 import time
 # def main():
 while True:
     # Initialize SparkSession
     print("about to create spark sessions")
-    # spark = SparkSession.builder.appName("TF-IDF").getOrCreate()
     spark = SparkSession.builder \
         .appName("spark-worker")\
         .master("spark://spark-master:7077")\
@@ -36,10 +35,15 @@ while True:
     data.show()
     print("loaded data correctly")
 
+   
+    from pyspark.sql.functions import regexp_replace
+    # Remove html tags
+    data = data.withColumn("content", regexp_replace("content", "<[^>]*>", ""))
+
     # Use concat_ws() to combine the array of strings into a single column
     data = data.withColumn("content", concat_ws(" ", "content"))
     data.show()
-    print("before groyp by")
+    print("before group by")
     # Use groupBy() and concat_ws() to combine the strings for rows with the same ID
     data = data.groupBy("id").agg(concat_ws(" ", collect_list("content")).alias("combined_content"))
 
@@ -65,11 +69,7 @@ while True:
 
     data.show()
     print("After convert to dense vector")
-    data = data.drop("rawFeatures")
-    data.show()
-    print("After drop raw features")
-    data = data.drop("combined_content")
-    data.show()
+
     print("after drop combined content")
     to_dense = lambda v: DenseVector(v.toArray()) if isinstance(v, SparseVector) else v
     to_dense_udf = udf(to_dense, VectorUDT())

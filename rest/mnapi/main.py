@@ -21,31 +21,26 @@ Endpoints
 
 
 app = FastAPI()
-# Load the Parquet file containing the TF-IDF values
-# try:
-#     tfidf_df = pd.read_parquet('tfidf.parquet')
-# except:
-#     print('There was an error reading the parquet')
-#     tf_idf_df = None
-import os
-# Initialize the TF-IDF vectorizer and fit it to the corpus of text data
-spark = SparkSession.builder \
-    .appName("spark-worker")\
-    .master("spark://spark-master:7077")\
-    .config("spark.executor.instances", 1)\
-    .config("spark.cores.max", 2)\
-    .getOrCreate()
-
 schema = StructType([
     StructField("id", StringType(), True),
     StructField("words", ArrayType(StringType()), True),
     StructField("features", VectorUDT(), True)
 ])
-# tfidf = spark.read.parquet('/opt/warehouse/tf_idf3.parquet') 
-tfidf = spark.read.schema(schema).parquet('/opt/warehouse/tf_idf3.parquet')
-tfidf_df=tfidf.toPandas()
-print(tfidf_df.columns)
-print(tfidf_df.head())
+import os
+# Initialize the TF-IDF vectorizer and fit it to the corpus of text data
+# spark = SparkSession.builder \
+#     .appName("rest-test")\
+#     .master("spark://spark-master:7077")\
+#     .config("spark.executor.instances", 1)\
+#     .config("spark.cores.max", 2)\
+#     .getOrCreate()
+
+
+# # tfidf = spark.read.parquet('/opt/warehouse/tf_idf3.parquet') 
+# tfidf = spark.read.schema(schema).parquet('/opt/warehouse/tf_idf3.parquet')
+# tfidf_df=tfidf.toPandas()
+# print(tfidf_df.columns)
+# print(tfidf_df.head())
 # vectorizer = TfidfVectorizer()
 
 # corpus = tfidf_df['words']
@@ -58,46 +53,107 @@ print(tfidf_df.head())
 tf_idf_df = None
 @app.get("/")
 def read_root():
-    print("in read_root")  
-    # spark = SparkSession.builder \
-    # .appName("spark-worker")\
-    # .master("spark://spark-master:7077")\
-    # .config("spark.executor.instances", 1)\
-    # .config("spark.cores.max", 2)\
-    # .getOrCreate()
-    # tfidf = spark.read.parquet('/opt/warehouse/tf_idf3.parquet') 
-    # vectorizer = TfidfVectorizer()
-    # print(tfidf.columns)
-    # print(tfidf.head())
-    # tfidf_df = tfidf.toPandas()
-    # print(cosine_sim_matrix)
-    try:
-        print("This is a try")
-        print(os.listdir('..'))
-        print(os.listdir('/opt/warehouse/'))
-        print(os.listdir('../warehouse/'))
-        # tfidf_df = tfidf.toPandas()
-        print("The tdidf populated successfully")
+    return {"Hello": "World"}
 
-        message = 'The import worked'
-
-    except:
-        print('There was an error reading the parquet')
-        message = 'The import failed'
-        tf_idf_df = None
-    spark.stop()
-    return {"Import status": message}
-
-
+# 1 End point 
 # Lists all of the known Mastodon accounts in the data-set.
 @app.get('/mstdn-nlp/api/v1/accounts/')
 def get_accounts() -> List[Dict[str, str]]:
-    users_list = tfidf[['username', 'id']].to_dict('records')
+    spark = SparkSession.builder \
+    .appName("rest-test")\
+    .master("spark://spark-master:7077")\
+    .config("spark.executor.instances", 1)\
+    .config("spark.cores.max", 2)\
+    .getOrCreate()
+
+    tfidf = spark.read.schema(schema).parquet('/opt/warehouse/tf_idf3.parquet')
+    tfidf_df=tfidf.toPandas()
+    users_list = tfidf_df[['username', 'id']].to_dict('records')
     return users_list
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
+# 2 End point
+@app.get("/tf-idf/user-ids/{user_id}")
+def get_tf_idf(user_id: str) -> Dict[str, float]:
+    """
+    Returns the TF-IDF vector for the given user ID.
+    """
+    spark = SparkSession.builder \
+    .appName("rest-test")\
+    .master("spark://spark-master:7077")\
+    .config("spark.executor.instances", 1)\
+    .config("spark.cores.max", 2)\
+    .getOrCreate()
+
+
+    # tfidf = spark.read.parquet('/opt/warehouse/tf_idf3.parquet') 
+    tfidf = spark.read.schema(schema).parquet('/opt/warehouse/tf_idf3.parquet')
+    tfidf_df=tfidf.toPandas()
+    print(tfidf_df.columns)
+    print(tfidf_df.head())
+    vectorizer = TfidfVectorizer()
+
+    tf_idf_vector = tfidf_df[tfidf_df['id'] == user_id]['features'].values[0]
+    tf_idf_vector = tf_idf_vector.toArray()
+    tf_idf_dict = dict(zip(vectorizer.get_feature_names(), tf_idf_vector))
+    return tf_idf_dict
+
+# 3 End point
+# Returns the 10 closest users by cosine distance of vectorized TF-IDF.
+@app.get("/tf-idf/user-ids/{user_id}/neighbors")
+def get_tf_idf_neighbors(user_id: str) -> List[Dict[str, float]]:
+    """
+    Returns the 10 closest users by cosine distance of vectorized TF-IDF.
+    """
+    spark = SparkSession.builder \
+    .appName("rest-test")\
+    .master("spark://spark-master:7077")\
+    .config("spark.executor.instances", 1)\
+    .config("spark.cores.max", 2)\
+    .getOrCreate()
+
+
+    # tfidf = spark.read.parquet('/opt/warehouse/tf_idf3.parquet') 
+    tfidf = spark.read.schema(schema).parquet('/opt/warehouse/tf_idf3.parquet')
+    tfidf_df=tfidf.toPandas()
+    print(tfidf_df.columns)
+    print(tfidf_df.head())
+    vectorizer = TfidfVectorizer()
+
+    corpus = tfidf_df['words']
+    tfidf_matrix = vectorizer.fit_transform(corpus)
+
+    # Compute the cosine similarity matrix for all users
+    cosine_sim_matrix = cosine_similarity(tfidf_matrix, tfidf_matrix)
+    # Get the index of the user ID in the TF-IDF matrix
+    user_idx = tfidf_df[tfidf_df['id'] == user_id].index[0]
+
+    # Get the cosine similarity scores of all users to the given user ID
+    cosine_sim_scores = list(enumerate(cosine_sim_matrix[user_idx]))
+
+    # Sort the users by their cosine similarity score
+    sorted_cosine_sim_scores = sorted(cosine_sim_scores, key=lambda x: x[1], reverse=True)
+
+    # Get the top 10 users
+    top_10_users = sorted_cosine_sim_scores[1:11]
+
+    # Get the user IDs of the top 10 users
+    top_10_users_ids = [tfidf_df.iloc[i[0]]['id'] for i in top_10_users]
+
+    # Get the TF-IDF vectors for the top 10 users
+    top_10_users_tfidf = [tfidf_df.iloc[i[0]]['features'] for i in top_10_users]
+
+    # Convert the TF-IDF vectors to lists
+    top_10_users_tfidf = [i.toArray().tolist() for i in top_10_users_tfidf]
+
+    # Zip the user IDs and TF-IDF vectors together
+    top_10_users_tfidf = list(zip(top_10_users_ids, top_10_users_tfidf))
+
+    # Convert the TF-IDF vectors to dictionaries
+    top_10_users_tfidf = [dict(zip(vectorizer.get_feature_names(), i[1])) for i in top_10_users_tfidf]
+
+    return top_10_users_tfidf
+
+
 
 @app.get("/sparktest")
 def spark_test():
@@ -117,22 +173,3 @@ def spark_test():
     finally:
         spark_session.stop()
 
-
-# @app.get("/sparktest_tf_idf")
-# def spark_test():
-#     from pyspark.sql import SparkSession
-#     spark = SparkSession.builder \
-#         .appName("rest-test")\
-#         .master("spark://spark-master:7077")\
-#         .config("spark.executor.instances", 1)\
-#         .config("spark.cores.max", 2)\
-#         .getOrCreate()
-#     try:
-#         tf_idf = spark_session.read.parquet('/opt/warehouse/tf_idf.parquet/')
-#         wc2.createOrReplaceTempView("wordcounts")
-#         query = "SELECT * FROM wordcounts WHERE LEN(word) > 4 ORDER BY count DESC"
-#         ans = spark_session.sql(query).limit(10)
-#         list_of_dicts = ans.rdd.map(lambda row: row.asDict()).collect()
-#         return list_of_dicts
-#     finally:
-#         spark_session.stop()
