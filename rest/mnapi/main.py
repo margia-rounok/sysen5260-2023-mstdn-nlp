@@ -22,8 +22,10 @@ Endpoints
 
 app = FastAPI()
 schema = StructType([
-    StructField("id", StringType(), True),
+    StructField("account", StringType(), True),
+    StructField("combined_content", StringType(), True),
     StructField("words", ArrayType(StringType()), True),
+    StructField("rawFeatures", VectorUDT(), True),
     StructField("features", VectorUDT(), True)
 ])
 import os
@@ -68,7 +70,7 @@ def get_accounts() -> List[Dict[str, str]]:
 
     tfidf = spark.read.schema(schema).parquet('/opt/warehouse/tf_idf3.parquet')
     tfidf_df=tfidf.toPandas()
-    users_list = tfidf_df[['username', 'id']].to_dict('records')
+    users_list = tfidf_df[['account']].to_dict('records')
     return users_list
 
 # 2 End point
@@ -92,7 +94,7 @@ def get_tf_idf(user_id: str) -> Dict[str, float]:
     print(tfidf_df.head())
     vectorizer = TfidfVectorizer()
 
-    tf_idf_vector = tfidf_df[tfidf_df['id'] == user_id]['features'].values[0]
+    tf_idf_vector = tfidf_df[tfidf_df['account'] == user_id]['features'].values[0]
     tf_idf_vector = tf_idf_vector.toArray()
     tf_idf_dict = dict(zip(vectorizer.get_feature_names(), tf_idf_vector))
     return tf_idf_dict
@@ -125,7 +127,7 @@ def get_tf_idf_neighbors(user_id: str) -> List[Dict[str, float]]:
     # Compute the cosine similarity matrix for all users
     cosine_sim_matrix = cosine_similarity(tfidf_matrix, tfidf_matrix)
     # Get the index of the user ID in the TF-IDF matrix
-    user_idx = tfidf_df[tfidf_df['id'] == user_id].index[0]
+    user_idx = tfidf_df[tfidf_df['account'] == user_id].index[0]
 
     # Get the cosine similarity scores of all users to the given user ID
     cosine_sim_scores = list(enumerate(cosine_sim_matrix[user_idx]))
@@ -137,7 +139,7 @@ def get_tf_idf_neighbors(user_id: str) -> List[Dict[str, float]]:
     top_10_users = sorted_cosine_sim_scores[1:11]
 
     # Get the user IDs of the top 10 users
-    top_10_users_ids = [tfidf_df.iloc[i[0]]['id'] for i in top_10_users]
+    top_10_users_ids = [tfidf_df.iloc[i[0]]['account'] for i in top_10_users]
 
     # Get the TF-IDF vectors for the top 10 users
     top_10_users_tfidf = [tfidf_df.iloc[i[0]]['features'] for i in top_10_users]

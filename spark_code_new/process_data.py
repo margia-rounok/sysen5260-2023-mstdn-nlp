@@ -45,7 +45,7 @@ while True:
     data.show()
     print("before group by")
     # Use groupBy() and concat_ws() to combine the strings for rows with the same ID
-    data = data.groupBy("id").agg(concat_ws(" ", collect_list("content")).alias("combined_content"))
+    data = data.groupBy("account").agg(concat_ws(" ", collect_list("content")).alias("combined_content"))
 
     # Tokenize content column
     tokenizer = Tokenizer(inputCol="combined_content", outputCol="words")
@@ -82,13 +82,4 @@ while True:
     data.write.parquet(path="/opt/warehouse/tf_idf3.parquet",mode="overwrite")
     #spark.stop()
     time.sleep(300)
-# return
-
-# import time
-
-# if __name__ == '__main__':
-#     print("in the main file")
-#     while True:
-#         print("in the while loop")
-#         main()
-#         time.sleep(300)
+    print("sleeping for 5 minutes")
